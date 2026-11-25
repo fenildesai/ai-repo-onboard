@@ -82,6 +82,12 @@ Open [SampleCatalog](http://localhost:51874) and search for `pen`. You can also 
 
 ![SampleCatalog application showing Pen and Pencil from the running API](docs/screenshots/06-sample-ui.jpg)
 
+## Repository instructions and optional skills
+
+The **AGENTS.md** and **Copilot instructions** drafts include detected project context, working conventions, and validation guidance. See [how we draft repository instructions](docs/instruction-design.md).
+
+The [skills catalog](skills) includes **Caveman** for terse engineering replies and **Simple English** for readable documentation. Use either style when it fits the task.
+
 ## Assess the content with Copilot or Codex
 
 Copy the full [`skills/ai-repo-onboard`](skills/ai-repo-onboard) directory to a skill location supported by your installed client. Ask the client to assess your repository using the skill. It guides the client to cite repository evidence, distinguish missing guidance from unverified items, and request approval before editing.

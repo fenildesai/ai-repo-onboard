@@ -3,6 +3,50 @@ function Get-Checks($root) {
  @('AGENTS.md','Shared AI guidance','AGENTS.md'),@('Copilot instructions','Repository guidance','.github/copilot-instructions.md'),@('Scoped instructions','Technology conventions','.github/instructions'),@('Project Guide','Copilot onboarding agent','.github/agents/project-guide.agent.md'),@('Agent skills','Reusable workflows','.agents/skills'),@('Instruction consistency','Review shared guidance',''),@('Project knowledge','Architecture and business context','docs/ai/project-overview.md'),@('Build and run','Build documentation','README.md'),@('Testing guide','Documentation for running and maintaining tests','docs/ai/testing.md'),@('CI/CD','Delivery pipeline','azure-pipelines.yml'),@('Quality and security','Engineering guardrails','docs/ai/standards.md'),@('Developer onboarding','Setup guidance','docs/ai/developer-guide.md'))
  for($i=0;$i -lt $defs.Count;$i++){ $d=$defs[$i]; $exists=$d[2] -and (Test-Path -LiteralPath (Join-Path $root $d[2])); $status=if($exists){'Review'}elseif($i -eq 5){'Review'}else{'Missing'}; [pscustomobject]@{id=$i;name=$d[0];description=$d[1];path=$d[2];status=$status;canCreate=($i -in @(0,1,3,6,8,10,11) -and !$exists)} }
 }
+function Get-InstructionEvidence($root, $profile) {
+    $code = [char]96
+    $projectName = ($profile.name -replace '[^\p{L}\p{N} ._-]', ' ').Trim()
+    if (!$projectName) { $projectName = 'this repository' }
+
+    $stack = @($profile.projects.technology) + @($profile.projects | ForEach-Object { $_.frameworks }) + @($profile.languages.name)
+    $stack = @($stack | Where-Object { $_ -match '^[\p{L}\p{N} .+#/-]+$' } | Select-Object -Unique -First 10)
+    $stackText = if ($stack.Count) { $stack -join ', ' } else { 'Check the project manifests for the technology stack.' }
+
+    $known = @('README.md', 'CONTRIBUTING.md', 'AGENTS.md', 'GLOSSARY.md', 'CONTEXT.md', 'docs/architecture.md',
+        'docs/ai/project-overview.md', 'docs/ai/testing.md', '.editorconfig', 'global.json', 'Directory.Build.props',
+        'package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml', 'Makefile', '.github/workflows', 'azure-pipelines.yml')
+    $referencePaths = @($known | Where-Object { Test-Path -LiteralPath (Join-Path $root $_) })
+    $solutionPaths = @($profile.solutions | Where-Object { $_ -match '^[\p{L}\p{N} ./_-]+$' })
+    $projects = @($profile.projects | Where-Object { $_.path -match '^[\p{L}\p{N} ./_-]+$' })
+    $map = @(
+        $solutionPaths | Select-Object -First 3 | ForEach-Object { "- Solution: $code$_$code" }
+        $projects | Select-Object -First 6 | ForEach-Object {
+            $kind = if ($_.isTest) { 'Test project' } else { 'Project' }
+            "$('- ' + $kind): $code$($_.path)$code"
+        }
+    )
+    if (!$map.Count) { $map = @('- Find the affected entry point in the project manifest or repository documentation.') }
+    $references = if ($referencePaths.Count) {
+        ($referencePaths | Select-Object -First 10 | ForEach-Object { "$code$_$code" }) -join ', '
+    } else { 'Check the repository for contribution guidance and build configuration.' }
+
+    $validation = if ($solutionPaths.Count -eq 1) {
+        $solution = $solutionPaths[0]
+        $commands = "Start with ${code}dotnet build `"$solution`"$code"
+        if (@($projects | Where-Object isTest).Count) { $commands += " and ${code}dotnet test `"$solution`"$code" }
+        "$commands. Confirm the SDK, prerequisites, and CI options before running. These commands are inferred from the solution."
+    } else {
+        'Use the setup, build, test, and lint commands documented for the area you changed. Check CI when a command or prerequisite is unclear.'
+    }
+    [pscustomobject]@{
+        name = $projectName
+        stack = $stackText
+        map = $map -join "`n"
+        references = $references
+        validation = $validation
+    }
+}
+
 function Get-Draft($root, $id, $profile) {
     $check = Get-Checks $root | Where-Object { $_.id -eq $id }
     if (!$check -or !$check.canCreate) { throw 'This check requires manual review.' }
@@ -17,29 +61,55 @@ function Get-Draft($root, $id, $profile) {
     $testList = if ($testPaths.Count) { $testPaths -join ', ' } else { 'No .NET test projects detected.' }
 
     $body = switch ($id) {
-        0 { @"
-# Repository instructions for $($profile.name)
+        0 {
+            $evidence = Get-InstructionEvidence $root $profile
+            @"
+# AGENTS.md
 
-## Before editing
+## Project context
 
-- Read the nearest project file and existing repository guidance.
-- Keep changes scoped to the request and preserve established conventions.
-- Review the diff for unrelated changes and run the repository's documented checks.
+- Repository: $($evidence.name)
+- Detected stack: $($evidence.stack)
 
-## Project entry points
+$($evidence.map)
 
-$projectList
-"@ }
-        1 { @"
-# GitHub Copilot instructions
+## Working in this repository
 
-Use the existing implementation and tests as examples when suggesting changes to **$($profile.name)**.
+- Follow any more specific AGENTS.md in the directory you change.
+- Start with the relevant project files and documentation. Known references: $($evidence.references)
+- Use the repository's established domain terms and conventions. Preserve public interfaces unless the task requires a change.
+- Keep the diff focused. Leave unrelated work and generated or vendored files alone unless the task covers them.
+- Keep secrets out of source, fixtures, and logs. Ask before deploying or changing production data.
 
-- Inspect neighboring files for naming, error handling, and dependency patterns.
-- Keep APIs compatible with the target frameworks declared by project files.
-- When adding behavior, identify the nearest existing test and explain how to verify the change.
-- Flag any command or assumption you could not verify.
-"@ }
+## Validation
+
+$($evidence.validation)
+
+Run the checks that cover the change. Report checks that could not run and the reason.
+"@
+        }
+        1 {
+            $evidence = Get-InstructionEvidence $root $profile
+            @"
+# GitHub Copilot repository instructions
+
+- Work in $($evidence.name). Detected stack: $($evidence.stack)
+- Use the relevant repository references for setup, build rules, and conventions: $($evidence.references)
+- Follow matching instructions under .github/instructions/ when present. Use the nearest implementation and tests as examples for naming, error handling, and test style.
+- Preserve the target framework and public API behavior unless the task requires a change. Keep changes small and use established domain terms.
+- Keep credentials and private data out of code, logs, and fixtures.
+
+## Project and test entry points
+
+$($evidence.map)
+
+## Build and test
+
+$($evidence.validation)
+
+Use the affected tests for changed behavior. Include the commands and results in the pull request or handoff.
+"@
+        }
         3 { @"
 ---
 name: Project Guide
