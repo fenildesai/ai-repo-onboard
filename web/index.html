@@ -44,7 +44,7 @@ progress::-webkit-progress-value{background:var(--blue);border-radius:10px}
 .projected progress{accent-color:#b37c00}
 .note{margin-top:12px}
 .dashboard{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:16px;align-items:start;margin-top:16px}
-.side{display:grid;gap:14px;min-width:0}
+.side{min-width:0}
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
 .filters button{background:#f6f9fc;border-color:var(--line);font-size:13px;padding:6px 9px}
 .filters button[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:white}
@@ -66,8 +66,17 @@ input[type=checkbox]{accent-color:var(--blue);width:15px;height:15px;margin:0}
 .skill h3{margin-bottom:5px}
 .skill p{margin:6px 0}
 .skill a{font-size:14px;font-weight:650}
-details.panel summary{cursor:pointer;color:var(--navy);font-weight:700}
-.profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.repo-sources{margin:0 0 15px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;list-style:none}
+.repo-sources li{display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#f1f5f9;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted)}
+.repo-sources li:first-child{background:#eaf3fa;color:var(--navy)}
+.repo-sources span{font-size:12px;white-space:nowrap}
+.section-links{display:flex;flex-wrap:wrap;gap:5px 18px;margin:0 0 12px;font-size:14px}
+.section-links a{font-weight:650}
+#profile{margin-bottom:14px}
+.profile-tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:8px 18px}
+#profile-details{margin-top:10px}
+#profile-details summary{padding:5px 0;color:var(--navy);cursor:pointer;font-size:14px;font-weight:700}
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px}
 .metric{padding:8px;background:#edf4fa;border-radius:8px;overflow-wrap:anywhere}
 .metric span{display:block;color:var(--muted);font-size:12px}
 .metric b{font-size:14px}
@@ -80,8 +89,8 @@ dialog::backdrop{background:#122c46a8}
 dialog .line{justify-content:flex-end;margin-top:14px}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--canvas);border-radius:8px;padding:12px;max-height:45vh;overflow:auto;font-size:14px}
 footer{text-align:center;color:var(--muted);font-size:14px;margin:24px}
-@media(max-width:820px){.dashboard{grid-template-columns:1fr}.side{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:560px){main{margin-top:25px;padding:0 12px}.panel{padding:14px}.overview,.side{grid-template-columns:1fr}.task{grid-template-columns:1fr}.task-actions{display:flex;align-items:center}.score strong{font-size:33px}#scan-form button{width:100%}}
+@media(max-width:820px){.dashboard{grid-template-columns:1fr}}
+@media(max-width:560px){main{margin-top:25px;padding:0 12px}.panel{padding:14px}.overview{grid-template-columns:1fr}.task{grid-template-columns:1fr}.task-actions{display:flex;align-items:center}.score strong{font-size:33px}#scan-form button{width:100%}}
 </style>
 </head>
 <body>
@@ -92,6 +101,11 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin:24px}
     <p>Find gaps and prepare your repository for GitHub Copilot and OpenAI Codex.</p>
   </div>
   <form id="scan-form" class="panel">
+    <ul class="repo-sources" aria-label="Repository sources">
+      <li><strong>Local folder</strong><span>Available</span></li>
+      <li><strong>GitHub URL</strong><span>Coming soon</span></li>
+      <li><strong>Azure DevOps URL</strong><span>Coming soon</span></li>
+    </ul>
     <label for="path">Local repository path</label>
     <div class="line">
       <input type="text" id="path" placeholder="C:\Projects\CustomerPortal" required>
@@ -104,6 +118,25 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin:24px}
       <h2 id="assessment-title" tabindex="-1">Assessment</h2>
       <p id="root" class="path"></p>
     </div>
+    <nav class="section-links" aria-label="Assessment sections">
+      <a href="#profile">Project</a>
+      <a href="#coverage">Coverage</a>
+      <a href="#tasks-title">Tasks</a>
+      <a href="#skills-title">Skills</a>
+    </nav>
+    <section id="profile" class="panel" aria-labelledby="profile-title">
+      <h2 id="profile-title">Project summary</h2>
+      <div id="metrics" class="profile-grid"></div>
+      <details id="profile-details">
+        <summary>Project, framework and language details</summary>
+        <div class="profile-tables">
+          <div id="projects"></div>
+          <div id="java-builds"></div>
+          <div id="languages"></div>
+        </div>
+        <p class="note">Source lines include comments and exclude blank lines.</p>
+      </details>
+    </section>
     <div id="coverage" class="panel">
       <div class="overview" aria-live="polite">
         <div class="score">
@@ -133,14 +166,6 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin:24px}
           <p class="note">Detection covers repository skill folders. These skills are optional for coverage.</p>
           <div id="skills"></div>
         </section>
-        <details id="profile" class="panel">
-          <summary>Project summary</summary>
-          <div id="metrics" class="profile-grid"></div>
-          <div id="projects"></div>
-          <div id="java-builds"></div>
-          <div id="languages"></div>
-          <p class="note">Source lines include comments and exclude blank lines.</p>
-        </details>
       </aside>
     </div>
   </section>
@@ -164,7 +189,6 @@ const skillCatalog = [
 const filters = [
   ['all', 'All tasks', () => true],
   ['drafts', 'Drafts available', check => check.canCreate],
-  ['manual', 'Manual actions', check => !check.canCreate && check.status === 'Missing'],
   ['review', 'Review', check => check.status === 'Review']
 ];
 let assessment;
@@ -253,10 +277,12 @@ function renderTable(container, title, headers, rows) {
 
 function renderProfile(profile) {
   const metrics = [
+    ['Languages', profile.languages.slice(0, 3).map(language => language.name).join(', ')],
+    ['.NET projects', profile.projects.length || ''],
+    ['Java build tools', [...new Set(profile.javaBuilds.map(build => build.tool))].join(', ')],
     ['Repository files', profile.files],
     ['Source files', profile.sourceFiles],
-    ['Non-blank source lines', profile.lines],
-    ['.NET solutions', profile.solutions.join(', ')]
+    ['Non-blank source lines', profile.lines]
   ];
   $('metrics').replaceChildren(...metrics.filter(([, value]) => value !== '').map(([label, value]) => {
     const card = el('div', '', 'metric');
@@ -302,8 +328,6 @@ function renderTask(check) {
     button.setAttribute('aria-label', 'Preview draft for ' + check.name);
     button.addEventListener('click', () => openDraft(check));
     actions.append(button);
-  } else if (check.status === 'Missing') {
-    actions.append(el('span', 'Add manually', 'tag'));
   }
   task.append(info, actions);
   return task;
@@ -360,7 +384,7 @@ async function openDraft(check) {
   trigger.disabled = true;
   try {
     const draft = await api('/draft', { id: check.id });
-    activeDraft = check;
+    activeDraft = { id: check.id, path: draft.path, root: assessment.root };
     const { count, total } = coverage(assessment.checks);
     $('preview-title').textContent = 'Review draft for ' + check.name;
     $('file').textContent = draft.path;
@@ -411,7 +435,7 @@ $('approve').addEventListener('click', async () => {
   $('cancel').disabled = true;
   $('draft-error').textContent = '';
   try {
-    const result = await api('/create', { id: activeDraft.id, approved: true });
+    const result = await api('/create', { ...activeDraft, approved: true });
     included.delete(activeDraft.id);
     $('review').close();
     render(result);

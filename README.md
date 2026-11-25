@@ -14,6 +14,8 @@ cd ai-repo-onboard
 .\Start.cmd
 ```
 
+Select a **Local folder** to assess a Git working copy. **GitHub URL** and **Azure DevOps URL** are marked **Coming soon**. You can assess either service today by cloning a repository locally and entering its folder path.
+
 Keep the launcher window open. It starts the local service and opens AI Repo Onboard in your default browser. It tries port `8765` first and uses the next available port through `8784` if that port is busy. If you already have a clone, run `git pull --ff-only` from its root and restart the launcher.
 
 ![AI Repo Onboard launch screen with a local repository path field and an Assess repository button](docs/screenshots/01-start.jpg)
@@ -36,31 +38,33 @@ Paste the printed path into **Local repository path** and select **Assess reposi
 
 **Current coverage** counts detected baseline assets. **Projected coverage** estimates how many assets would be present if you created the selected drafts. Toggle **Include in projection** to compare options. File quality and instruction consistency require manual review. Optional skills do not add separate points to coverage.
 
-Expand **Project summary** to see detected solutions, projects, technologies, target frameworks, and source counts by language. A clean SampleCatalog copy has four `net10.0` projects, including one unit-test project, and seven source files across C#, Razor, and CSS.
+The **Project summary** appears above coverage. It shows key technologies and source totals immediately. Expand **Project, framework and language details** for the complete inventory, or use the section links to jump to coverage, tasks, or skills. A clean SampleCatalog copy has four `net10.0` projects, including one unit-test project, and seven source files across C#, Razor, and CSS.
 
-![SampleCatalog assessment showing current and projected coverage alongside optional skills](docs/screenshots/02-project-summary.jpg)
+![SampleCatalog highlights above current and projected coverage](docs/screenshots/02-project-summary.jpg)
 
 The scanner counts non-blank source lines, including comments, in tracked and unignored files. It excludes common build, dependency, and generated files. Repository file totals increase when you create an unignored guidance file.
 
-**Recommended tasks** groups the 12 checks into agent guidance, onboarding, and development workflow. Use filters to see draftable tasks, missing items that need manual action, or items to review. Each task explains the purpose of its proposed change.
+**Recommended tasks** groups the 12 checks into agent guidance, onboarding, and development workflow. Use filters to see all tasks, available drafts, or items to review. Each task explains the purpose of its proposed change.
 
 | Status | Meaning |
 | --- | --- |
-| **Missing** | The expected path was absent. Selected checks offer a draft. |
+| **Missing** | The expected asset was absent. Preview a starter file and approve creation when it fits. |
 | **Detected · Review** | The expected evidence exists. Review its content before treating the check as complete. |
 | **Manual review** | The check needs human judgment, such as checking for inconsistent instructions. |
 
-![Recommended tasks filtered to missing assets that need manual action](docs/screenshots/03-checklist.jpg)
+![Recommended tasks filtered to assets with available drafts](docs/screenshots/03-checklist.jpg)
 
 ## 4. Preview, approve, and verify a draft
 
-In the sample, find **Testing guide** and select **Preview draft**. Review the draft and confirm it names `SampleCatalog.Domain.Tests.csproj`.
+In the sample, find **Scoped instructions** and select **Preview draft**. Check that the file patterns match the project languages.
 
-![Testing guide preview with the detected unit-test project and Approve and create button](docs/screenshots/04-preview.jpg)
+![Scoped instructions preview showing C#, Razor and CSS file patterns](docs/screenshots/04-preview.jpg)
 
-Select **Approve & create** to write `docs/ai/testing.md`. The report recalculates coverage and shows **Detected · Review** for the new guide. Open the file in your sample folder to inspect it, or run `git -C ..\SampleCatalog-Demo status --short` from the toolkit root. Drafts have guidance specific to each check. The toolkit writes a draft only after approval and does not commit or push it.
+Select **Approve & create** to write `.github/instructions/source.instructions.md`. The report recalculates coverage and shows **Detected · Review** for the new file. Open the file in your sample folder to inspect it, or run `git -C ..\SampleCatalog-Demo status --short` from the toolkit root. Drafts have guidance specific to each check. The toolkit writes a draft only after approval and does not commit or push it.
 
-![Current coverage rises to 18 percent after approval, with projected coverage at 73 percent](docs/screenshots/05-after-create.jpg)
+![Current coverage rises to 18 percent after approval, with 100 percent projected asset coverage](docs/screenshots/05-after-create.jpg)
+
+The app can also draft a repository-validation skill, a build-and-run README, or a CI starter when those assets are missing. The CI starter uses Azure Pipelines for a recognised Azure DevOps remote and GitHub Actions otherwise. It starts with a manual whitespace check. Add the project's verified build and test commands before enabling automatic runs.
 
 ## 5. Build, test, and view SampleCatalog
 
