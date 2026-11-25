@@ -1,6 +1,6 @@
 function Get-Checks($root) {
  $defs = @(
- @('AGENTS.md','Shared AI guidance','AGENTS.md'),@('Copilot instructions','Repository guidance','.github/copilot-instructions.md'),@('Scoped instructions','Technology conventions','.github/instructions'),@('Project Guide','Copilot onboarding agent','.github/agents/project-guide.agent.md'),@('Agent skills','Reusable workflows','.agents/skills'),@('Instruction consistency','Review shared guidance',''),@('Project knowledge','Architecture and business context','docs/ai/project-overview.md'),@('Build and run','Build documentation','README.md'),@('Testing','Test guidance','docs/ai/testing.md'),@('CI/CD','Delivery pipeline','azure-pipelines.yml'),@('Quality and security','Engineering guardrails','docs/ai/standards.md'),@('Developer onboarding','Setup guidance','docs/ai/developer-guide.md'))
+ @('AGENTS.md','Shared AI guidance','AGENTS.md'),@('Copilot instructions','Repository guidance','.github/copilot-instructions.md'),@('Scoped instructions','Technology conventions','.github/instructions'),@('Project Guide','Copilot onboarding agent','.github/agents/project-guide.agent.md'),@('Agent skills','Reusable workflows','.agents/skills'),@('Instruction consistency','Review shared guidance',''),@('Project knowledge','Architecture and business context','docs/ai/project-overview.md'),@('Build and run','Build documentation','README.md'),@('Testing guide','Documentation for running and maintaining tests','docs/ai/testing.md'),@('CI/CD','Delivery pipeline','azure-pipelines.yml'),@('Quality and security','Engineering guardrails','docs/ai/standards.md'),@('Developer onboarding','Setup guidance','docs/ai/developer-guide.md'))
  for($i=0;$i -lt $defs.Count;$i++){ $d=$defs[$i]; $exists=$d[2] -and (Test-Path -LiteralPath (Join-Path $root $d[2])); $status=if($exists){'Review'}elseif($i -eq 5){'Review'}else{'Missing'}; [pscustomobject]@{id=$i;name=$d[0];description=$d[1];path=$d[2];status=$status;canCreate=($i -in @(0,1,3,6,8,10,11) -and !$exists)} }
 }
 function Get-Draft($root, $id, $profile) {
@@ -12,6 +12,9 @@ function Get-Draft($root, $id, $profile) {
     $technology = @($profile.projects | ForEach-Object { $_.technology } | Sort-Object -Unique) -join ', '
     $frameworks = @($profile.projects | ForEach-Object { $_.frameworks } | Sort-Object -Unique) -join ', '
     $languages = @($profile.languages | ForEach-Object { $_.name }) -join ', '
+
+    $testPaths = @($profile.projects | Where-Object isTest | ForEach-Object { $_.path })
+    $testList = if ($testPaths.Count) { $testPaths -join ', ' } else { 'No .NET test projects detected.' }
 
     $body = switch ($id) {
         0 { @"
@@ -74,9 +77,9 @@ Record the purpose, key entry points, dependencies, and data flow after checking
 
 ## Locate tests
 
-Look for test projects, test configuration, and test commands in CI before choosing a test runner. Detected .NET project files:
+Look for test configuration and test commands in CI before choosing a test runner. Detected .NET test projects:
 
-$projectList
+$testList
 
 ## Validate a change
 

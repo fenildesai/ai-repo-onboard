@@ -26,7 +26,7 @@ Close the PowerShell window to stop the service. If startup is blocked, check th
 
 ## Read the results
 
-The project summary lists detected .NET projects, target frameworks, and source files and non-blank lines by language. Counts include comments and use tracked and unignored working-tree files. Common build, dependency, and generated files are excluded.
+The project summary lists detected .NET solutions, projects, test projects, target frameworks, and source files and non-blank lines by language. Counts include comments and use tracked and unignored working-tree files. Common build, dependency, and generated files are excluded.
 
 | Status | Meaning |
 | --- | --- |

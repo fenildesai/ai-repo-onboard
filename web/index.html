@@ -28,6 +28,7 @@ function renderProfile(profile) {
   const format = value => value.toLocaleString();
   const metrics = [
     ['Project name', profile.name],
+    ['.NET solutions', profile.solutions.join(', ') || 'None detected'],
     ['Repository files', format(profile.files)],
     ['Source files', format(profile.sourceFiles)],
     ['Non-blank source lines', format(profile.lines)]
@@ -37,8 +38,8 @@ function renderProfile(profile) {
     card.append(el('span', label), el('b', value));
     return card;
   }));
-  renderTable($('projects'), '.NET projects', ['Project file', 'Technology', 'Target frameworks'],
-    profile.projects.map(project => [project.path, project.technology, project.frameworks.join(', ') || 'Not declared in project file']),
+  renderTable($('projects'), '.NET projects', ['Project file', 'Technology', 'Target frameworks', 'Role'],
+    profile.projects.map(project => [project.path, project.technology, project.frameworks.join(', ') || 'Not declared in project file', project.isTest ? 'Test project' : 'Project']),
     'No .NET project files detected.');
   renderTable($('languages'), 'Languages', ['Language', 'Files', 'Source lines'],
     profile.languages.map(language => [language.name, format(language.files), format(language.lines)]),

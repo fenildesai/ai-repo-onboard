@@ -13,6 +13,7 @@ function Get-ProjectProfile($root) {
     if ($LASTEXITCODE -ne 0) { throw 'Git could not list the repository files.' }
 
     $languages = @{}
+    $solutions = New-Object 'System.Collections.Generic.List[string]'
     $projects = New-Object 'System.Collections.Generic.List[object]'
     $files = 0
     foreach ($path in ($paths | Sort-Object -CaseSensitive -Unique)) {
@@ -20,14 +21,16 @@ function Get-ProjectProfile($root) {
         $file = Get-Item -LiteralPath (Join-Path $root $path) -Force -ErrorAction SilentlyContinue
         if (!$file -or $file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { continue }
         $files++
+        if ($file.Extension -in '.slnx', '.sln') { $solutions.Add($path) }
         if ($file.Extension -in '.csproj', '.fsproj', '.vbproj') {
             $frameworks = @()
-            $sdk = ''
+            $sdk = ''; $isTest = $false
             try {
                 $xml = New-Object System.Xml.XmlDocument
                 $xml.XmlResolver = $null
                 $xml.Load($file.FullName)
                 $sdk = $xml.DocumentElement.GetAttribute('Sdk')
+                $isTest = $null -ne $xml.SelectSingleNode("//*[local-name()='IsTestProject' and normalize-space(.)='true'] | //*[local-name()='PackageReference' and @Include='Microsoft.NET.Test.Sdk']")
                 $frameworks = @($xml.SelectNodes("//*[local-name()='TargetFramework' or local-name()='TargetFrameworks' or local-name()='TargetFrameworkVersion']") |
                     ForEach-Object { $_.InnerText -split ';' } |
                     ForEach-Object { $_.Trim() } |
@@ -38,7 +41,7 @@ function Get-ProjectProfile($root) {
             }
             $technology = if ($sdk -like '*Microsoft.NET.Sdk.Web*') { 'ASP.NET Core' } else { '.NET' }
             $projects.Add([pscustomobject]@{
-                name = $file.BaseName; path = $path; technology = $technology; frameworks = $frameworks
+                name = $file.BaseName; path = $path; technology = $technology; frameworks = $frameworks; isTest = $isTest
             })
         }
 
@@ -55,7 +58,8 @@ function Get-ProjectProfile($root) {
 
     $breakdown = @($languages.Values | Sort-Object -Property @{Expression='lines'; Descending=$true}, name)
     $name = Split-Path $root -Leaf
-    if ($projects.Count -eq 1) { $name = $projects[0].name }
+    if ($solutions.Count -eq 1) { $name = [IO.Path]::GetFileNameWithoutExtension($solutions[0]) }
+    elseif ($projects.Count -eq 1) { $name = $projects[0].name }
     [pscustomobject]@{
         name = $name
         files = $files
@@ -63,5 +67,6 @@ function Get-ProjectProfile($root) {
         lines = [int](($breakdown | Measure-Object -Property lines -Sum).Sum)
         languages = $breakdown
         projects = @($projects.ToArray())
+        solutions = @($solutions.ToArray())
     }
 }
