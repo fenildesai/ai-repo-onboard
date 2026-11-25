@@ -43,7 +43,7 @@ progress::-webkit-progress-value{background:var(--blue);border-radius:10px}
 .projected progress::-webkit-progress-value{background:#b37c00}
 .projected progress{accent-color:#b37c00}
 .note{margin-top:12px}
-.task-panel{margin-top:16px}.recommendations{margin:16px 0 20px}
+.task-panel{margin-top:16px}.recommendations{margin:22px 0 0;padding-top:16px;border-top:1px solid var(--line)}
 .recommendation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:10px}
 .recommendation{padding:15px;border:1px solid #cadbe8;background:#f7fbff;border-radius:12px;min-width:0}
 .recommendation h4{margin:0;color:var(--navy);font-size:17px}
@@ -163,13 +163,13 @@ footer{text-align:center;color:var(--muted);font-size:14px;margin:24px}
     </div>
     <section class="panel task-panel" aria-labelledby="tasks-title">
       <h2 id="tasks-title" tabindex="-1">Recommended tasks</h2>
+      <h3>Baseline tasks</h3>
+      <div id="filters" class="filters" role="group" aria-label="Filter baseline tasks"></div>
+      <div id="checks"></div>
       <section class="recommendations" aria-labelledby="recommendations-title">
         <h3 id="recommendations-title" tabindex="-1">Optional skill recommendations</h3>
         <div id="recommendations" class="recommendation-grid"></div>
       </section>
-      <h3>Baseline tasks</h3>
-      <div id="filters" class="filters" role="group" aria-label="Filter baseline tasks"></div>
-      <div id="checks"></div>
     </section>
   </section>
 </main>

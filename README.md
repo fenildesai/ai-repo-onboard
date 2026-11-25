@@ -44,7 +44,7 @@ The **Project summary** appears above coverage. It shows key technologies and so
 
 The scanner counts non-blank source lines, including comments, in tracked and unignored files. It excludes common build, dependency, and generated files. Repository file totals increase when you create an unignored guidance file.
 
-**Recommended tasks** groups the 12 checks into agent guidance, onboarding, and development workflow. Use filters to see all tasks, available drafts, or items to review. Each task explains the purpose of its proposed change.
+**Recommended tasks** groups the 12 checks into agent guidance, onboarding, and development workflow. Use filters to see all tasks, available drafts, or items to review. Each task explains the purpose of its proposed change. Optional skill recommendations follow the baseline tasks.
 
 | Status | Meaning |
 | --- | --- |
@@ -52,7 +52,7 @@ The scanner counts non-blank source lines, including comments, in tracked and un
 | **Detected · Review** | The expected evidence exists. Review its content before treating the check as complete. |
 | **Manual review** | The check needs human judgment, such as checking for inconsistent instructions. |
 
-![Recommended tasks with token efficiency and new-team-member skill recommendations](docs/screenshots/03-checklist.jpg)
+![Recommended tasks with AGENTS.md and Copilot instructions first](docs/screenshots/03-checklist.jpg)
 
 ## 4. Preview, approve, and verify a draft
 
