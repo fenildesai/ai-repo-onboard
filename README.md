@@ -32,32 +32,35 @@ git -C ..\SampleCatalog-Demo init
 
 Paste the printed path into **Local repository path** and select **Assess repository**. The separate copy lets you try file creation without modifying your toolkit clone.
 
-## 3. Read the project summary and checklist
+## 3. Read coverage, tasks, and project details
 
-**Project summary** lists detected solutions, projects, technologies, target frameworks, and source counts by language. A clean SampleCatalog copy has four `net10.0` projects, including one unit-test project, and seven source files across C#, Razor, and CSS.
+**Current coverage** counts detected baseline assets. **Projected coverage** estimates how many assets would be present if you created the selected drafts. Toggle **Include in projection** to compare options. File quality and instruction consistency require manual review. Optional skills do not add separate points to coverage.
 
-![Project summary showing SampleCatalog.slnx, source totals, and all four .NET 10 projects](docs/screenshots/02-project-summary.jpg)
+Expand **Project summary** to see detected solutions, projects, technologies, target frameworks, and source counts by language. A clean SampleCatalog copy has four `net10.0` projects, including one unit-test project, and seven source files across C#, Razor, and CSS.
+
+![SampleCatalog assessment showing current and projected coverage alongside optional skills](docs/screenshots/02-project-summary.jpg)
 
 The scanner counts non-blank source lines, including comments, in tracked and unignored files. It excludes common build, dependency, and generated files. Repository file totals increase when you create an unignored guidance file.
 
-The **Readiness checklist** covers 12 areas, including agent instructions, skills, documentation, testing guidance, and CI/CD.
+**Recommended tasks** groups the 12 checks into agent guidance, onboarding, and development workflow. Use filters to see draftable tasks, missing items that need manual action, or items to review. Each task explains the purpose of its proposed change.
 
 | Status | Meaning |
 | --- | --- |
 | **Missing** | The expected path was absent. Selected checks offer a draft. |
-| **Review** | The path exists or the check requires manual inspection. Review the content before treating the check as complete. |
+| **Detected · Review** | The expected evidence exists. Review its content before treating the check as complete. |
+| **Manual review** | The check needs human judgment, such as checking for inconsistent instructions. |
 
-![Readiness checklist showing Missing and Review statuses and Create buttons](docs/screenshots/03-checklist.jpg)
+![Recommended tasks filtered to missing assets that need manual action](docs/screenshots/03-checklist.jpg)
 
 ## 4. Preview, approve, and verify a draft
 
-In the sample, find **Testing guide** and select **Create**. Review the draft and confirm it names `SampleCatalog.Domain.Tests.csproj`.
+In the sample, find **Testing guide** and select **Preview draft**. Review the draft and confirm it names `SampleCatalog.Domain.Tests.csproj`.
 
 ![Testing guide preview with the detected unit-test project and Approve and create button](docs/screenshots/04-preview.jpg)
 
-Select **Approve & create** to write `docs/ai/testing.md`. The checklist refreshes and shows **Review** for the new guide. Open the file in your sample folder to inspect it, or run `git -C ..\SampleCatalog-Demo status --short` from the toolkit root. Drafts have guidance specific to each check. The toolkit writes a draft only after approval and does not commit or push it.
+Select **Approve & create** to write `docs/ai/testing.md`. The report recalculates coverage and shows **Detected · Review** for the new guide. Open the file in your sample folder to inspect it, or run `git -C ..\SampleCatalog-Demo status --short` from the toolkit root. Drafts have guidance specific to each check. The toolkit writes a draft only after approval and does not commit or push it.
 
-![Testing guide marked Review after approval](docs/screenshots/05-after-create.jpg)
+![Current coverage rises to 18 percent after approval, with projected coverage at 73 percent](docs/screenshots/05-after-create.jpg)
 
 ## 5. Build, test, and view SampleCatalog
 
@@ -86,7 +89,7 @@ Open [SampleCatalog](http://localhost:51874) and search for `pen`. You can also 
 
 The **AGENTS.md** and **Copilot instructions** drafts include detected project context, working conventions, and validation guidance. Java drafts list detected Maven and Gradle build files and infer root build commands from the available wrapper. Review the required JDK and CI settings before running those commands. See [how we draft repository instructions](docs/instruction-design.md).
 
-The [skills catalog](skills) includes [Caveman](skills/caveman) for terse engineering replies and [Simple English](skills/simple-english) for readable documentation. The app footer links to both. Copy the skill folder to a supported client skill location to use it there. Use either style when it fits the task.
+The [skills catalog](skills) includes [Caveman](skills/caveman) for terse engineering replies and [Simple English](skills/simple-english) for readable documentation. The assessment lists both under **Optional agent skills** and shows whether their skill files were detected in the scanned repository. Copy the skill folder to a supported client skill location to use it there. Use either style when it fits the task.
 
 ## Assess the content with Copilot or Codex
 

@@ -1,8 +1,66 @@
-function Get-Checks($root) {
- $defs = @(
- @('AGENTS.md','Shared AI guidance','AGENTS.md'),@('Copilot instructions','Repository guidance','.github/copilot-instructions.md'),@('Scoped instructions','Technology conventions','.github/instructions'),@('Project Guide','Copilot onboarding agent','.github/agents/project-guide.agent.md'),@('Agent skills','Reusable workflows','.agents/skills'),@('Instruction consistency','Review shared guidance',''),@('Project knowledge','Architecture and business context','docs/ai/project-overview.md'),@('Build and run','Build documentation','README.md'),@('Testing guide','Documentation for running and maintaining tests','docs/ai/testing.md'),@('CI/CD','Delivery pipeline','azure-pipelines.yml'),@('Quality and security','Engineering guardrails','docs/ai/standards.md'),@('Developer onboarding','Setup guidance','docs/ai/developer-guide.md'))
- for($i=0;$i -lt $defs.Count;$i++){ $d=$defs[$i]; $exists=$d[2] -and (Test-Path -LiteralPath (Join-Path $root $d[2])); $status=if($exists){'Review'}elseif($i -eq 5){'Review'}else{'Missing'}; [pscustomobject]@{id=$i;name=$d[0];description=$d[1];path=$d[2];status=$status;canCreate=($i -in @(0,1,3,6,8,10,11) -and !$exists)} }
+function Get-RepositorySkills($root) {
+    foreach ($id in 'caveman', 'simple-english') {
+        $paths = @(foreach ($directory in '.agents/skills', '.github/skills') {
+            $path = "$directory/$id/SKILL.md"
+            if (Test-Path -LiteralPath (Join-Path $root $path) -PathType Leaf) { $path }
+        })
+        [pscustomobject]@{ id = $id; paths = $paths }
+    }
 }
+
+function Get-Checks($root) {
+    $defs = @(
+        @('AGENTS.md', 'Agent guidance', 'AGENTS.md', 'Gives agents a shared project map, conventions, and validation steps.'),
+        @('Copilot instructions', 'Agent guidance', '.github/copilot-instructions.md', 'Gives Copilot repository-specific instructions for edits and checks.'),
+        @('Scoped instructions', 'Agent guidance', '.github/instructions', 'Keeps area-specific rules close to the files they apply to.'),
+        @('Project Guide', 'Agent guidance', '.github/agents/project-guide.agent.md', 'Adds a Copilot agent for explaining the project with links to source files.'),
+        @('Agent skills', 'Agent guidance', '.agents/skills', 'Gives agents reusable workflows they can load when a task calls for them.'),
+        @('Instruction consistency', 'Agent guidance', '', 'Compare agent instructions for overlapping or conflicting rules.'),
+        @('Project knowledge', 'Onboarding', 'docs/ai/project-overview.md', 'Records the detected stack and gives maintainers a place to describe architecture and ownership.'),
+        @('Build and run', 'Onboarding', 'README.md', 'Gives contributors an entry point for setup and local execution.'),
+        @('Testing guide', 'Development workflow', 'docs/ai/testing.md', 'Points to detected tests and explains how to validate a change.'),
+        @('CI/CD', 'Development workflow', 'azure-pipelines.yml', 'Shows how automated checks are configured for changes.'),
+        @('Quality and security', 'Development workflow', 'docs/ai/standards.md', 'Records expectations for validation, secret handling, and engineering checks.'),
+        @('Developer onboarding', 'Onboarding', 'docs/ai/developer-guide.md', 'Gives new contributors a starting point for tools, dependencies, and smoke checks.')
+    )
+    for ($id = 0; $id -lt $defs.Count; $id++) {
+        $name, $group, $path, $impact = $defs[$id]
+        if ($id -eq 4) {
+            $skill = $null
+            foreach ($directory in '.agents/skills', '.github/skills') {
+                $skillPath = Join-Path $root $directory
+                if (Test-Path -LiteralPath $skillPath -PathType Container) {
+                    $skill = Get-ChildItem -LiteralPath $skillPath -Directory |
+                        Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf } |
+                        Select-Object -First 1
+                    if ($skill) { $path = $directory; break }
+                }
+            }
+            $present = $null -ne $skill
+        } elseif ($id -eq 9) {
+            $workflowPath = Join-Path $root '.github/workflows'
+            if (Test-Path -LiteralPath $workflowPath -PathType Container) {
+                $workflow = Get-ChildItem -LiteralPath $workflowPath -File |
+                    Where-Object { $_.Extension -in '.yml', '.yaml' } | Select-Object -First 1
+                if ($workflow) { $path = ".github/workflows/$($workflow.Name)" }
+            }
+            $present = Test-Path -LiteralPath (Join-Path $root $path) -PathType Leaf
+        } else {
+            $present = $path -and (Test-Path -LiteralPath (Join-Path $root $path))
+        }
+        $status = if ($present -or !$path) { 'Review' } else { 'Missing' }
+        [pscustomobject]@{
+            id = $id
+            name = $name
+            group = $group
+            description = $impact
+            path = $path
+            status = $status
+            canCreate = (!$present -and $id -in 0, 1, 3, 6, 8, 10, 11)
+        }
+    }
+}
+
 function Get-InstructionEvidence($root, $profile) {
     $code = [char]96
     $projectName = ($profile.name -replace '[^\p{L}\p{N} ._-]', ' ').Trim()
