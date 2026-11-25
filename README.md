@@ -84,9 +84,9 @@ Open [SampleCatalog](http://localhost:51874) and search for `pen`. You can also 
 
 ## Repository instructions and optional skills
 
-The **AGENTS.md** and **Copilot instructions** drafts include detected project context, working conventions, and validation guidance. See [how we draft repository instructions](docs/instruction-design.md).
+The **AGENTS.md** and **Copilot instructions** drafts include detected project context, working conventions, and validation guidance. Java drafts list detected Maven and Gradle build files and infer root build commands from the available wrapper. Review the required JDK and CI settings before running those commands. See [how we draft repository instructions](docs/instruction-design.md).
 
-The [skills catalog](skills) includes **Caveman** for terse engineering replies and **Simple English** for readable documentation. Use either style when it fits the task.
+The [skills catalog](skills) includes [Caveman](skills/caveman) for terse engineering replies and [Simple English](skills/simple-english) for readable documentation. The app footer links to both. Copy the skill folder to a supported client skill location to use it there. Use either style when it fits the task.
 
 ## Assess the content with Copilot or Codex
 

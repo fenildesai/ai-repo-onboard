@@ -8,7 +8,7 @@ function Get-InstructionEvidence($root, $profile) {
     $projectName = ($profile.name -replace '[^\p{L}\p{N} ._-]', ' ').Trim()
     if (!$projectName) { $projectName = 'this repository' }
 
-    $stack = @($profile.projects.technology) + @($profile.projects | ForEach-Object { $_.frameworks }) + @($profile.languages.name)
+    $stack = @($profile.projects.technology) + @($profile.projects | ForEach-Object { $_.frameworks }) + @($profile.languages.name) + @($profile.javaBuilds.tool)
     $stack = @($stack | Where-Object { $_ -match '^[\p{L}\p{N} .+#/-]+$' } | Select-Object -Unique -First 10)
     $stackText = if ($stack.Count) { $stack -join ', ' } else { 'Check the project manifests for the technology stack.' }
 
@@ -20,6 +20,8 @@ function Get-InstructionEvidence($root, $profile) {
     $projects = @($profile.projects | Where-Object { $_.path -match '^[\p{L}\p{N} ./_-]+$' })
     $map = @(
         $solutionPaths | Select-Object -First 3 | ForEach-Object { "- Solution: $code$_$code" }
+        $profile.javaBuilds | Select-Object -First 6 | ForEach-Object { "- $($_.tool) build file: $code$($_.path)$code" }
+        $profile.javaSourceRoots | Select-Object -First 6 | ForEach-Object { "- Java sources: $code$_$code" }
         $projects | Select-Object -First 6 | ForEach-Object {
             $kind = if ($_.isTest) { 'Test project' } else { 'Project' }
             "$('- ' + $kind): $code$($_.path)$code"
@@ -30,20 +32,32 @@ function Get-InstructionEvidence($root, $profile) {
         ($referencePaths | Select-Object -First 10 | ForEach-Object { "$code$_$code" }) -join ', '
     } else { 'Check the repository for contribution guidance and build configuration.' }
 
-    $validation = if ($solutionPaths.Count -eq 1) {
-        $solution = $solutionPaths[0]
-        $commands = "Start with ${code}dotnet build `"$solution`"$code"
-        if (@($projects | Where-Object isTest).Count) { $commands += " and ${code}dotnet test `"$solution`"$code" }
-        "$commands. Confirm the SDK, prerequisites, and CI options before running. These commands are inferred from the solution."
-    } else {
-        'Use the setup, build, test, and lint commands documented for the area you changed. Check CI when a command or prerequisite is unclear.'
+    $validation = @(
+        if ($solutionPaths.Count -eq 1) {
+            $solution = $solutionPaths[0]
+            $commands = "Start with ${code}dotnet build `"$solution`"$code"
+            if (@($projects | Where-Object isTest).Count) { $commands += " and ${code}dotnet test `"$solution`"$code" }
+            "$commands. Confirm the SDK, prerequisites, and CI options before running. These commands are inferred from the solution."
+        }
+        if ($profile.javaBuilds.Count) {
+            'Check the build files and CI for the required JDK, build profiles and module-specific checks.'
+            if ($profile.javaCommands.Count) {
+                $commands = ($profile.javaCommands | ForEach-Object { "$code$_$code" }) -join ', '
+                "Root build command candidates: $commands. Confirm which build applies before running. These commands were inferred from the build files and were not run."
+            } else {
+                'Run the documented checks from the relevant module or build root.'
+            }
+        }
+    )
+    if (!$validation.Count) {
+        $validation = @('Use the setup, build, test, and lint commands documented for the area you changed. Check CI when a command or prerequisite is unclear.')
     }
     [pscustomobject]@{
         name = $projectName
         stack = $stackText
         map = $map -join "`n"
         references = $references
-        validation = $validation
+        validation = $validation -join "`n`n"
     }
 }
 
@@ -51,14 +65,14 @@ function Get-Draft($root, $id, $profile) {
     $check = Get-Checks $root | Where-Object { $_.id -eq $id }
     if (!$check -or !$check.canCreate) { throw 'This check requires manual review.' }
 
-    $projectPaths = @($profile.projects | ForEach-Object { $_.path })
-    $projectList = if ($projectPaths.Count) { $projectPaths -join ', ' } else { 'No .NET project files detected.' }
-    $technology = @($profile.projects | ForEach-Object { $_.technology } | Sort-Object -Unique) -join ', '
+    $projectPaths = @($profile.projects | ForEach-Object { $_.path }) + @($profile.javaBuilds | ForEach-Object { $_.path })
+    $projectList = if ($projectPaths.Count) { $projectPaths -join ', ' } else { 'No supported project manifests detected.' }
+    $technology = @(@($profile.projects.technology) + @($profile.javaBuilds.tool) | Where-Object { $_ } | Sort-Object -Unique) -join ', '
     $frameworks = @($profile.projects | ForEach-Object { $_.frameworks } | Sort-Object -Unique) -join ', '
     $languages = @($profile.languages | ForEach-Object { $_.name }) -join ', '
 
-    $testPaths = @($profile.projects | Where-Object isTest | ForEach-Object { $_.path })
-    $testList = if ($testPaths.Count) { $testPaths -join ', ' } else { 'No .NET test projects detected.' }
+    $testPaths = @($profile.projects | Where-Object isTest | ForEach-Object { $_.path }) + @($profile.javaSourceRoots | Where-Object { $_ -like '*src/test/java' })
+    $testList = if ($testPaths.Count) { $testPaths -join ', ' } else { 'No supported test projects or conventional Java test directories detected.' }
 
     $body = switch ($id) {
         0 {
@@ -147,14 +161,14 @@ Record the purpose, key entry points, dependencies, and data flow after checking
 
 ## Locate tests
 
-Look for test configuration and test commands in CI before choosing a test runner. Detected .NET test projects:
+Look for test configuration and test commands in CI before choosing a test runner. Detected test projects and directories:
 
 $testList
 
 ## Validate a change
 
 - Run the documented checks for the affected area.
-- For a .NET test project, use dotnet test with the verified project or solution path.
+- Check the project manifest and CI for the test runner, prerequisites, and any integration-test flags.
 - Record the commands, results, and any unavailable dependencies.
 "@ }
         10 { @"

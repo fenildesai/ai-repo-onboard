@@ -15,12 +15,16 @@ function Get-ProjectProfile($root) {
     $languages = @{}
     $solutions = New-Object 'System.Collections.Generic.List[string]'
     $projects = New-Object 'System.Collections.Generic.List[object]'
+    $javaSourceRoots = New-Object 'System.Collections.Generic.HashSet[string]'
     $files = 0
     foreach ($path in ($paths | Sort-Object -CaseSensitive -Unique)) {
-        if ($path.StartsWith('"') -or $path -match '(^|/)(bin|obj|node_modules|vendor|dist|coverage)(/|$)') { continue }
+        if ($path.StartsWith('"') -or $path -match '(^|/)(bin|obj|target|build|\.gradle|node_modules|vendor|dist|coverage)(/|$)') { continue }
         $file = Get-Item -LiteralPath (Join-Path $root $path) -Force -ErrorAction SilentlyContinue
         if (!$file -or $file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { continue }
         $files++
+        if ($path -match '^(?<source>(?:[\p{L}\p{N} ._-]+/)*src/(?:main|test)/java)/.+\.java$') {
+            [void]$javaSourceRoots.Add($Matches.source)
+        }
         if ($file.Extension -in '.slnx', '.sln') { $solutions.Add($path) }
         if ($file.Extension -in '.csproj', '.fsproj', '.vbproj') {
             $frameworks = @()
@@ -57,6 +61,28 @@ function Get-ProjectProfile($root) {
     }
 
     $breakdown = @($languages.Values | Sort-Object -Property @{Expression='lines'; Descending=$true}, name)
+    $javaBuilds = @(
+        $paths | Where-Object { $_ -match '^(?:[\p{L}\p{N} ._-]+/)*(?:pom\.xml|(?:build|settings)\.gradle(?:\.kts)?)$' -and
+            $_ -notmatch '(^|/)(bin|obj|target|build|\.gradle|node_modules|vendor|dist|coverage)(/|$)' } |
+            Sort-Object -Unique | Where-Object { Test-Path -LiteralPath (Join-Path $root $_) -PathType Leaf } |
+            ForEach-Object {
+                $tool = if ($_ -match '(^|/)pom\.xml$') { 'Maven' } else { 'Gradle' }
+                [pscustomobject]@{ tool = $tool; path = $_ }
+            }
+    )
+    $javaCommands = @(
+        if ($javaBuilds.path -contains 'pom.xml') {
+            if ($paths -contains 'mvnw.cmd' -and (Test-Path -LiteralPath (Join-Path $root 'mvnw.cmd') -PathType Leaf)) { '.\mvnw.cmd verify' }
+            elseif ($paths -contains 'mvnw' -and (Test-Path -LiteralPath (Join-Path $root 'mvnw') -PathType Leaf)) { './mvnw verify' }
+            else { 'mvn verify' }
+        }
+        if (@($javaBuilds | Where-Object { $_.path -notlike '*/*' -and $_.tool -eq 'Gradle' }).Count -and
+            @($breakdown | Where-Object { $_.name -in 'Java', 'Kotlin' }).Count) {
+            if ($paths -contains 'gradlew.bat' -and (Test-Path -LiteralPath (Join-Path $root 'gradlew.bat') -PathType Leaf)) { '.\gradlew.bat build' }
+            elseif ($paths -contains 'gradlew' -and (Test-Path -LiteralPath (Join-Path $root 'gradlew') -PathType Leaf)) { './gradlew build' }
+            else { 'gradle build' }
+        }
+    )
     $name = Split-Path $root -Leaf
     if ($solutions.Count -eq 1) { $name = [IO.Path]::GetFileNameWithoutExtension($solutions[0]) }
     elseif ($projects.Count -eq 1) { $name = $projects[0].name }
@@ -68,5 +94,8 @@ function Get-ProjectProfile($root) {
         languages = $breakdown
         projects = @($projects.ToArray())
         solutions = @($solutions.ToArray())
+        javaBuilds = $javaBuilds
+        javaCommands = $javaCommands
+        javaSourceRoots = @($javaSourceRoots | Sort-Object)
     }
 }
