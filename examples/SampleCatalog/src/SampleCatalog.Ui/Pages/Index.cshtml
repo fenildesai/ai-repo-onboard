@@ -1,0 +1,36 @@
+@page
+@model SampleCatalog.Ui.Pages.IndexModel
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sample Catalog</title>
+    <link rel="stylesheet" href="/catalog.css">
+</head>
+<body><main>
+    <h1>Sample Catalog</h1>
+    <form method="get">
+        <label for="query">Search products</label>
+        <input id="query" name="query" value="@Model.Query">
+        <button type="submit">Search</button>
+    </form>
+    @if (Model.CatalogUnavailable)
+    {
+        <p role="alert">The catalog API is unavailable. Check that it is running and try again.</p>
+    }
+    else if (Model.Products.Count == 0)
+    {
+        <p>No products match your search.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var product in Model.Products)
+            {
+                <li><span>@product.Name</span><strong>@product.Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</strong></li>
+            }
+        </ul>
+    }
+</main></body>
+</html>
