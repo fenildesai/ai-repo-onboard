@@ -38,9 +38,9 @@ Paste the printed path into **Local repository path** and select **Assess reposi
 
 **Current coverage** counts detected baseline assets. **Projected coverage** estimates how many assets would be present if you created the selected drafts. Toggle **Include in projection** to compare options. File quality and instruction consistency require manual review. Optional skills do not add separate points to coverage.
 
-The **Project summary** appears above coverage. It shows key technologies and source totals immediately. Expand **Project, framework and language details** for the complete inventory, or use the section links to jump to coverage, tasks, or skills. A clean SampleCatalog copy has four `net10.0` projects, including one unit-test project, and seven source files across C#, Razor, and CSS.
+The **Project summary** appears above coverage. It shows key technologies and source totals immediately. Expand **Project, framework and language details** for the complete inventory, or use the prominent navigation above it to jump to the summary, coverage, or recommended tasks. A clean SampleCatalog copy has four `net10.0` projects, including one unit-test project, and seven source files across C#, Razor, and CSS.
 
-![SampleCatalog highlights above current and projected coverage](docs/screenshots/02-project-summary.jpg)
+![Assessment navigation, project highlights, and current and projected coverage](docs/screenshots/02-project-summary.jpg)
 
 The scanner counts non-blank source lines, including comments, in tracked and unignored files. It excludes common build, dependency, and generated files. Repository file totals increase when you create an unignored guidance file.
 
@@ -52,15 +52,15 @@ The scanner counts non-blank source lines, including comments, in tracked and un
 | **Detected · Review** | The expected evidence exists. Review its content before treating the check as complete. |
 | **Manual review** | The check needs human judgment, such as checking for inconsistent instructions. |
 
-![Recommended tasks filtered to assets with available drafts](docs/screenshots/03-checklist.jpg)
+![Recommended tasks with token efficiency and new-team-member skill recommendations](docs/screenshots/03-checklist.jpg)
 
 ## 4. Preview, approve, and verify a draft
 
-In the sample, find **Scoped instructions** and select **Preview draft**. Check that the file patterns match the project languages.
+In the sample, find **New team members · Codebase Tour** and select **Preview skill**. Check that the suggested tour uses the detected solution and projects.
 
-![Scoped instructions preview showing C#, Razor and CSS file patterns](docs/screenshots/04-preview.jpg)
+![Codebase Tour skill preview with a repository-specific onboarding walkthrough](docs/screenshots/04-preview.jpg)
 
-Select **Approve & create** to write `.github/instructions/source.instructions.md`. The report recalculates coverage and shows **Detected · Review** for the new file. Open the file in your sample folder to inspect it, or run `git -C ..\SampleCatalog-Demo status --short` from the toolkit root. Drafts have guidance specific to each check. The toolkit writes a draft only after approval and does not commit or push it.
+Select **Approve & create** to write `.agents/skills/codebase-tour/SKILL.md`. The recommendation shows **Detected · Review**. If this is the first repository skill, it also satisfies the existing **Agent skills** baseline check. Open the file in your sample folder to inspect it, or run `git -C ..\SampleCatalog-Demo status --short` from the toolkit root. Drafts have guidance specific to each check. The toolkit writes a draft only after approval and does not commit or push it.
 
 ![Current coverage rises to 18 percent after approval, with 100 percent projected asset coverage](docs/screenshots/05-after-create.jpg)
 
@@ -93,7 +93,7 @@ Open [SampleCatalog](http://localhost:51874) and search for `pen`. You can also 
 
 The **AGENTS.md** and **Copilot instructions** drafts include detected project context, working conventions, and validation guidance. Java drafts list detected Maven and Gradle build files and infer root build commands from the available wrapper. Review the required JDK and CI settings before running those commands. See [how we draft repository instructions](docs/instruction-design.md).
 
-The [skills catalog](skills) includes [Caveman](skills/caveman) for terse engineering replies and [Simple English](skills/simple-english) for readable documentation. The assessment lists both under **Optional agent skills** and shows whether their skill files were detected in the scanned repository. Copy the skill folder to a supported client skill location to use it there. Use either style when it fits the task.
+The [skills catalog](skills) includes [Caveman](skills/caveman) for terse engineering replies and [Simple English](skills/simple-english) for readable documentation. The assessment lists both under **Recommended tasks → Token efficiency** and shows whether their skill files were detected. **Focused Context** adds a workflow for targeted reads, smaller command output, and concise handoffs. **Codebase Tour** helps new joiners trace a feature, find verified setup and test commands, and choose a safe first exercise. Preview and approve these two skills from the assessment. Copy the skill folder to a supported client skill location to use it there. Use either style when it fits the task.
 
 ## Assess the content with Copilot or Codex
 

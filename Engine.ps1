@@ -21,11 +21,18 @@ function Get-Checks($root) {
         @('Testing guide', 'Development workflow', 'docs/ai/testing.md', 'Points to detected tests and explains how to validate a change.'),
         @('CI/CD', 'Development workflow', '.github/workflows/repository-baseline.yml', 'Adds a manually triggered pipeline starter with a whitespace check.'),
         @('Quality and security', 'Development workflow', 'docs/ai/standards.md', 'Records expectations for validation, secret handling, and engineering checks.'),
-        @('Developer onboarding', 'Onboarding', 'docs/ai/developer-guide.md', 'Gives new contributors a starting point for tools, dependencies, and smoke checks.')
+        @('Developer onboarding', 'Onboarding', 'docs/ai/developer-guide.md', 'Gives new contributors a starting point for tools, dependencies, and smoke checks.'),
+        @('Focused Context', 'Token efficiency', '.agents/skills/focused-context/SKILL.md', 'Guide agents to read smaller source slices, limit routine command output, and keep replies concise.'),
+        @('Codebase Tour', 'New team members', '.agents/skills/codebase-tour/SKILL.md', 'Help new joiners trace a feature, find verified setup and test commands, and choose a safe first change.')
     )
     for ($id = 0; $id -lt $defs.Count; $id++) {
         $name, $group, $path, $impact = $defs[$id]
-        if ($id -eq 2) {
+        $optional = $id -in 12, 13
+        if ($optional) {
+            $copilotPath = $path.Replace('.agents/skills/', '.github/skills/')
+            if (Test-Path -LiteralPath (Join-Path $root $copilotPath) -PathType Leaf) { $path = $copilotPath }
+            $present = Test-Path -LiteralPath (Join-Path $root $path) -PathType Leaf
+        } elseif ($id -eq 2) {
             $instructions = Join-Path $root '.github/instructions'
             $present = $false
             if (Test-Path -LiteralPath $instructions -PathType Container) {
@@ -79,6 +86,7 @@ function Get-Checks($root) {
             description = $impact
             path = $path
             status = $status
+            optional = $optional
             canCreate = (!$present -and [bool]$path)
         }
     }
@@ -372,6 +380,46 @@ $projectList
 3. Configure local dependencies using the project's documented settings.
 4. Run the documented smoke checks and record any setup steps that need confirmation.
 "@ }
+        12 {
+            $evidence = Get-InstructionEvidence $root $profile
+            @"
+---
+name: focused-context
+description: Reduce unnecessary context and output tokens on a coding task while retaining evidence and validation results.
+---
+
+# Focused Context
+
+1. Start with the requested outcome. Use path or symbol searches to locate candidates before reading entire files. Use the project guidance only where it answers a question about the affected area.
+2. Read the smallest useful source and test slices. Broaden the search when a shared contract, caller, or failing test shows the change has wider impact.
+3. Limit routine command output to the relevant diff, summary, or failing portion. Keep exact commands, errors, paths, and test counts when they support a decision.
+4. Lead with the result in the handoff. Report verification and uncertainty without repeating the work log. Keep full details for destructive operations and ordered procedures.
+
+Repository references when needed: $($evidence.references)
+"@
+        }
+        13 {
+            $evidence = Get-InstructionEvidence $root $profile
+            @"
+---
+name: codebase-tour
+description: Guide a new team member through the project layout, first local run, or a feature flow using verified source.
+---
+
+# Codebase Tour
+
+1. Start from the area the newcomer wants to understand. For a general tour, choose one representative user-facing flow.
+2. Show the relevant entry point, its main dependencies, and the tests that cover it. Trace one request or event in order, with clickable file paths. Define unfamiliar project terms on first use.
+3. For a first local run, quote verified setup and test commands from the repository, with the working directory and prerequisites. Identify gaps for a maintainer to confirm.
+4. End with one safe first exercise, such as changing a test in a disposable branch. Explain how to tell whether it worked. Ask before changing files.
+
+Start with these repository references when relevant: $($evidence.references)
+
+Detected project entry points:
+
+$($evidence.map)
+"@
+        }
     }
 
     if (!$body) { throw 'No draft template is available for this check.' }
