@@ -4,7 +4,7 @@ Assess a local Git repository for AI readiness and see what guidance is missing 
 
 ## 1. Clone and launch
 
-You need Git, Windows PowerShell, and permission to use local port `8765`. The .NET 10 SDK is needed only to build and run the bundled sample.
+You need Git, Windows PowerShell, and permission to run a local HTTP listener. The .NET 10 SDK is needed only to build and run the bundled sample.
 
 Open PowerShell in the folder where you want the clone.
 
@@ -14,7 +14,7 @@ cd ai-repo-onboard
 .\Start.cmd
 ```
 
-Keep the launcher window open. It starts the local service and opens AI Repo Onboard in your default browser. If you already have a clone, run `git pull --ff-only` from its root and restart the launcher.
+Keep the launcher window open. It starts the local service and opens AI Repo Onboard in your default browser. It tries port `8765` first and uses the next available port through `8784` if that port is busy. If you already have a clone, run `git pull --ff-only` from its root and restart the launcher.
 
 ![AI Repo Onboard launch screen with a local repository path field and an Assess repository button](docs/screenshots/01-start.jpg)
 
@@ -96,4 +96,4 @@ Copy the full [`skills/ai-repo-onboard`](skills/ai-repo-onboard) directory to a 
 
 This release supports local Git working copies. Remote repository URLs, platform selection, quality scoring, editing existing files, and a native folder picker are outside the current release. Skill installation and authentication are manual.
 
-If the toolkit does not start, check the launcher window for errors, confirm port `8765` is free, and check that your organisation permits local PowerShell scripts and HTTP listeners.
+If the toolkit does not start, check the launcher window for errors. If all ports from `8765` through `8784` are busy, close an earlier AI Repo Onboard launcher or free one of those ports. Check that your organisation permits local PowerShell scripts and HTTP listeners.

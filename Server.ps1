@@ -1,12 +1,37 @@
 $ErrorActionPreference='Stop'
 . "$PSScriptRoot/Engine.ps1"
 . "$PSScriptRoot/Profile.ps1"
-$port=8765; $token=[guid]::NewGuid().ToString('N'); $listener=New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$port/"); $listener.Start(); $root=$null; $profile=$null
-Start-Process "http://localhost:$port/?token=$token"
-try { while($listener.IsListening){ $ctx=$listener.GetContext(); $req=$ctx.Request; $res=$ctx.Response; $res.Headers['Cache-Control']='no-store'; $res.Headers['X-Content-Type-Options']='nosniff'; try {
+$listener = $null
+foreach ($port in 8765..8784) {
+    $origin = "http://localhost:$port"
+    $candidateListener = New-Object System.Net.HttpListener
+    $candidateListener.Prefixes.Add("$origin/")
+    try {
+        $candidateListener.Start()
+        $listener = $candidateListener
+        break
+    } catch {
+        $cause = $_.Exception.GetBaseException()
+        $candidateListener.Close()
+        # HTTP.sys can report an existing prefix or an occupied port.
+        if ($cause -isnot [System.Net.HttpListenerException] -or $cause.NativeErrorCode -notin 32, 183, 10048) {
+            throw "AI Repo Onboard could not start on $origin. $($cause.Message)"
+        }
+    }
+}
+if (!$listener) {
+    throw 'AI Repo Onboard could not start because localhost ports 8765 through 8784 are busy. Close an earlier AI Repo Onboard launcher or free one of those ports, then run Start.cmd again.'
+}
+
+$token = [guid]::NewGuid().ToString('N')
+$root = $null
+$profile = $null
+try {
+ Write-Host "AI Repo Onboard is running at $origin. Close this window to stop it."
+ Start-Process "$origin/?token=$token"
+ while($listener.IsListening){ $ctx=$listener.GetContext(); $req=$ctx.Request; $res=$ctx.Response; $res.Headers['Cache-Control']='no-store'; $res.Headers['X-Content-Type-Options']='nosniff'; try {
  if($req.Url.AbsolutePath -eq '/' -and $req.HttpMethod -eq 'GET'){ $out=Get-Content "$PSScriptRoot/web/index.html" -Raw -Encoding UTF8; $res.ContentType='text/html; charset=utf-8' }
- else { if($req.HttpMethod -ne 'POST' -or $req.Headers['X-Session'] -ne $token){throw 'Unauthorized request'}; if($req.Headers['Origin'] -and $req.Headers['Origin'] -ne "http://localhost:$port"){throw 'Invalid origin'}; $reader=New-Object IO.StreamReader($req.InputStream); $data=$reader.ReadToEnd()|ConvertFrom-Json; $reader.Dispose(); $res.ContentType='application/json; charset=utf-8'
+ else { if($req.HttpMethod -ne 'POST' -or $req.Headers['X-Session'] -ne $token){throw 'Unauthorized request'}; if($req.Headers['Origin'] -and $req.Headers['Origin'] -ne $origin){throw 'Invalid origin'}; $reader=New-Object IO.StreamReader($req.InputStream); $data=$reader.ReadToEnd()|ConvertFrom-Json; $reader.Dispose(); $res.ContentType='application/json; charset=utf-8'
  switch($req.Url.AbsolutePath){
  '/scan' { $candidate=(Resolve-Path -LiteralPath $data.path).Path; $gitRoot=& git -C $candidate rev-parse --show-toplevel 2>$null; if($LASTEXITCODE -ne 0){throw 'Select a local Git repository'}; $candidateRoot=(Resolve-Path -LiteralPath $gitRoot).Path; $profile=Get-ProjectProfile $candidateRoot; $root=$candidateRoot; $result=@{root=$root;profile=$profile;checks=@(Get-Checks $root)} }
  '/draft' { if(!$root){throw 'Scan first'}; $result=Get-Draft $root ([int]$data.id) $profile }
